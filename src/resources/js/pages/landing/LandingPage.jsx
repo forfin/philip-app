@@ -8,11 +8,8 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
-import { css } from "@emotion/react";
-import { padding } from "@mui/system";
-import { Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material"; // Importing icons
-import IconButton from "@mui/material/IconButton";
-import { Box } from "@mui/material";
+
+import { Box, Button } from "@mui/material";
 
 import React, { useState, useEffect } from "react";
 
@@ -44,23 +41,51 @@ const LandingPage = () => {
     }));
 
     const [products, setProducts] = useState([]); // Use an array to hold products
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [lastPage, setLastPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const [perPage, setPerPage] = useState(10); // Number of items per page
+
     // Fetch products data on component mount
-    const fetchProducts = async () => {
+    const fetchProducts = async (page = 1) => {
         try {
             const response = await axios.get(
-                `${import.meta.env.VITE_APP_BACKEND_URL}/products`
+                `${import.meta.env.VITE_APP_BACKEND_URL}/products`,
+                {
+                    params: {
+                        page: page,
+                        per_page: perPage,
+                    },
+                }
             );
-            console.log(response);
-            setProducts(response.data.data); // Assuming 'data' holds the products
+            setProducts(response.data.data);
+            setCurrentPage(response.data.current_page);
+            setLastPage(response.data.last_page);
+            setTotal(response.data.total);
         } catch (error) {
             console.error("Error fetching products:", error);
         }
     };
 
     useEffect(() => {
-        fetchProducts(); // Call the fetchProducts function
-        console.log(products);
-    }, []); // Empty dependency array ensures this runs only once when the component mounts
+        fetchProducts(); // Call the fetchProducts function on mount or page change
+    }, [perPage]); // Effect runs when perPage changes
+
+    useEffect(() => {
+        fetchProducts(currentPage); // Fetch products whenever the page number changes
+    }, [currentPage]);
+
+    // Handle page changes
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
+
+    // Handle per-page changes
+    const handlePerPageChange = (event) => {
+        setPerPage(event.target.value);
+        setCurrentPage(1); // Reset to the first page when per-page is changed
+    };
     return (
         <>
             <Navbar />
@@ -74,7 +99,7 @@ const LandingPage = () => {
                     }}
                 >
                     <CreateProduct />
-                    <ImportCSV />
+                    <ImportCSV fetchProducts={fetchProducts} />
                 </Box>
 
                 <TableContainer component={Paper}>
@@ -220,6 +245,29 @@ const LandingPage = () => {
                         </TableBody>
                     </Table>
                 </TableContainer>
+
+                {/* Pagination controls */}
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        marginTop: "20px",
+                    }}
+                >
+                    <Button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                    >
+                        Previous
+                    </Button>
+                    <span>{`Page ${currentPage} of ${lastPage}`}</span>
+                    <Button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === lastPage}
+                    >
+                        Next
+                    </Button>
+                </Box>
             </div>
         </>
     );

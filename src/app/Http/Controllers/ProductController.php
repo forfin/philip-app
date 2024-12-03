@@ -11,19 +11,29 @@ class ProductController extends Controller
     /**
      * Display a listing of the products.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::with('updatedBy')->get(); // Make sure to load the updatedBy relationship
-
+        // Default items per page
+        $perPage = $request->get('per_page', 10);  // You can adjust the default number of items per page
+    
+        $products = Product::with('updatedBy')->paginate($perPage); // Paginate the results
+    
+        // Map over the products and add the updated_by_name
+        $products->getCollection()->transform(function ($product) {
+            $product->updated_by_name = $product->updatedBy ? $product->updatedBy->name : 'Unknown';
+            return $product;
+        });
+    
         return response()->json([
             'success' => true,
-            'data' => $products->map(function ($product) {
-                // Access the user object and add the name to the product data
-                $product->updated_by_name = $product->updatedBy ? $product->updatedBy->name : 'Unknown';
-                return $product;
-            })
+            'data' => $products->items(),
+            'current_page' => $products->currentPage(),
+            'last_page' => $products->lastPage(),
+            'total' => $products->total(),
+            'per_page' => $products->perPage(),
         ], 200);
     }
+    
 
     public function show($id)
     {
@@ -177,16 +187,25 @@ class ProductController extends Controller
         $handle = fopen($file, 'r');
         $header = true;
 
+        // Get the user ID from the JWT token
+        $user = JWTAuth::parseToken()->authenticate(); // This will authenticate the token and retrieve the user
+        $userId = $user ? $user->id : null; // Get the user ID, or null if not authenticated
+
+
         while (($row = fgetcsv($handle, 1000, ',')) !== false) {
             if ($header) {
                 $header = false; // Skip the header row
                 continue;
             }
             Product::create([
-                'name' => $row[0],
-                'amount' => $row[1],
-                'unit' => $row[2],
-                'color' => $row[3],
+                'created_at' => $row[0],
+                'updated_at' => $row[0],
+                'name' => $row[1],
+                'color' => $row[2],
+                'amount' => $row[3],
+                'unit' => $row[4],
+                'updated_by' => $userId
+
             ]);
         }
         fclose($handle);

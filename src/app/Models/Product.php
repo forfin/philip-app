@@ -27,6 +27,8 @@ class Product extends Model
         'amount',
         'unit',
         'updated_by',
+        'created_at',
+        'updated_at'
     ];
 
     /**

@@ -4,7 +4,7 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
 import TextField from "@mui/material/TextField";
-
+import axios from "axios";
 const style = {
     position: "absolute",
     top: "50%",
@@ -17,7 +17,7 @@ const style = {
     p: 4,
 };
 
-export default function ImportCSV() {
+export default function ImportCSV({ fetchProducts }) {
     const [open, setOpen] = useState(false);
     const [file, setFile] = useState(null); // State to hold the selected file
     const [errorMessage, setErrorMessage] = useState("");
@@ -49,18 +49,18 @@ export default function ImportCSV() {
         formData.append("file", file);
 
         try {
-            const response = await fetch("/api/import-csv", {
-                method: "POST",
-                body: formData,
+            // Make a POST request using axios
+            const response = await axios.post("/api/import-csv", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data", // Ensure content-type is set correctly for file upload
+                },
             });
 
-            const result = await response.json();
-            if (response.ok) {
-                alert("Data imported successfully!");
-                handleClose();
-            } else {
-                setErrorMessage(result.message || "Failed to import data.");
-            }
+            // Handle the response
+            console.log("File uploaded successfully:", response.data);
+
+            alert("Data imported successfully!");
+            fetchProducts();
         } catch (error) {
             setErrorMessage("An error occurred while uploading the file.");
         }
