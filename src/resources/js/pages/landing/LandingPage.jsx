@@ -19,6 +19,7 @@ import React, { useState, useEffect } from "react";
 import CreateProduct from "./components/CreateProduct.jsx";
 import EditProduct from "./components/EditProduct.jsx";
 import DeleteProduct from "./components/DeleteProduct.jsx";
+import ImportCSV from "./components/ImportCSV.jsx";
 import axios from "axios";
 
 const LandingPage = () => {
@@ -69,9 +70,11 @@ const LandingPage = () => {
                         display: "flex",
                         margin: "20px",
                         justifyContent: "flex-end",
+                        gap: "20px",
                     }}
                 >
                     <CreateProduct />
+                    <ImportCSV />
                 </Box>
 
                 <TableContainer component={Paper}>

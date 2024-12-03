@@ -164,4 +164,33 @@ class ProductController extends Controller
             ], 500); // HTTP 500: Internal Server Error
         }
     }
+
+
+
+    public function importCSV(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt|max:2048',
+        ]);
+
+        $file = $request->file('file');
+        $handle = fopen($file, 'r');
+        $header = true;
+
+        while (($row = fgetcsv($handle, 1000, ',')) !== false) {
+            if ($header) {
+                $header = false; // Skip the header row
+                continue;
+            }
+            Product::create([
+                'name' => $row[0],
+                'amount' => $row[1],
+                'unit' => $row[2],
+                'color' => $row[3],
+            ]);
+        }
+        fclose($handle);
+
+        return response()->json(['message' => 'Data imported successfully'], 200);
+    }
 }

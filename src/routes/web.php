@@ -21,3 +21,4 @@ Route::get('/api/products', [ProductController::class, 'index']); // Add Product
 Route::get('/api/products/{id}', [ProductController::class, 'show']);
 // Route for deleting a product
 Route::delete('/api/products/{id}', [ProductController::class, 'delete']);
+Route::post('/api/import-csv', [ProductController::class, 'importCSV']);
