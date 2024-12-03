@@ -38,7 +38,7 @@ services:
     restart: always
     tty: true
     environment:
-      MYSQL_DATABASE: "philip"
+      MYSQL_DATABASE: "laravel"
       MYSQL_USER: "laravel"
       MYSQL_PASSWORD: "laravel"
       MYSQL_ROOT_PASSWORD: "laravel"
@@ -71,7 +71,7 @@ services:
       - ./src:/var/www/html
     working_dir: /var/www/html
     depends_on:
-      -build php
+      - php
     user: laravel
     networks:
       - laravel
