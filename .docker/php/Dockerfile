@@ -1,4 +1,4 @@
-FROM php:8.2-fpm-alpine
+FROM php:8.2-fpm-alpine AS php-base
 
 # Copy File Config
 COPY ./.docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
@@ -46,11 +46,9 @@ RUN apk del --no-cache freetype-dev libpng-dev libjpeg-turbo-dev
 
 RUN docker-php-ext-install pdo pdo_mysql
 
-# Copy existing application directory contents
-COPY ./src /var/www/html
+# Add composer
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
-# Copy existing application directory permissions
-COPY --chown=laravel:laravel ./src /var/www/html
 
 # Change current user to www
 USER laravel
@@ -58,3 +56,12 @@ USER laravel
 # Expose port 9000 and start php-fpm server
 EXPOSE 9000
 CMD ["php-fpm"]
+
+
+FROM php-base AS php-prod
+
+# Copy existing application directory contents
+COPY ./ /var/www/html
+
+# Copy existing application directory permissions
+COPY --chown=laravel:laravel ./ /var/www/html

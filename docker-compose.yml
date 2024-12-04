@@ -26,6 +26,7 @@ services:
     build:
       context: .
       dockerfile: ./.docker/php/Dockerfile
+      target: php-base
     container_name: php
     restart: always
     volumes:

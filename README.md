@@ -1,10 +1,10 @@
 ### Start project
 ```sh
 cp .env.example .env
-composer install --ignore-platform-requirement
 npm ci
 
 docker-compose up -d
+docker-compose exec php composer install
 docker-compose exec php php artisan migrate
 npm run dev
 ```
