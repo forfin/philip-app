@@ -3,7 +3,8 @@ version: "3.8"
 networks:
   laravel:
     driver: bridge
-
+volumes:
+  mariadb_store_vol:
 services:
   nginx:
     build:
@@ -43,7 +44,7 @@ services:
       MYSQL_PASSWORD: "laravel"
       MYSQL_ROOT_PASSWORD: "laravel"
     volumes:
-      - ./mysql:/var/lib/mysql
+      - mariadb_store_vol:/var/lib/mysql
 
     networks:
       - laravel
@@ -61,18 +62,3 @@ services:
       - "81:80"
     networks:
       - laravel
-
-  composer:
-    build:
-      context: .
-      dockerfile: ./.docker/php/composer/Dockerfile
-    container_name: composer
-    volumes:
-      - ./src:/var/www/html
-    working_dir: /var/www/html
-    depends_on:
-      - php
-    user: laravel
-    networks:
-      - laravel
-    entrypoint: ["composer", "--ignore-platform-reqs"]
