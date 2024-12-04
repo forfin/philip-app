@@ -1,7 +1,7 @@
 ### Start project
 ```sh
 cp .env.example .env
-composer install
+composer install --ignore-platform-requirement
 npm ci
 
 docker-compose up -d
