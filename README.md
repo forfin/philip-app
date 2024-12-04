@@ -1,11 +1,12 @@
 ### Start project
 ```sh
-docker-compose up
-# change file name from .env.example to .env
+cp .env.example .env
 composer install
 npm ci
-npm run dev
+
+docker-compose up -d
 docker-compose exec php php artisan migrate
+npm run dev
 ```
 
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
