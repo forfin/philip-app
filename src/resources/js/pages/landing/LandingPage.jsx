@@ -1,91 +1,159 @@
 import Navbar from "../../common/Navbar.jsx";
-
-import { styled } from "@mui/material/styles";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell, { tableCellClasses } from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Paper from "@mui/material/Paper";
-
-import { Box, Button } from "@mui/material";
-
+import { Box, Button, TextField } from "@mui/material";
 import React, { useState, useEffect } from "react";
-
 import CreateProduct from "./components/CreateProduct.jsx";
 import EditProduct from "./components/EditProduct.jsx";
 import DeleteProduct from "./components/DeleteProduct.jsx";
 import ImportCSV from "./components/ImportCSV.jsx";
 import axios from "axios";
+import DataTable from "react-data-table-component";
 
 const LandingPage = () => {
-    const StyledTableCell = styled(TableCell)(({ theme }) => ({
-        [`&.${tableCellClasses.head}`]: {
-            backgroundColor: theme.palette.common.black,
-            color: theme.palette.common.white,
-        },
-        [`&.${tableCellClasses.body}`]: {
-            fontSize: 14,
-        },
-    }));
-
-    const StyledTableRow = styled(TableRow)(({ theme }) => ({
-        "&:nth-of-type(odd)": {
-            backgroundColor: theme.palette.action.hover,
-        },
-        // hide last border
-        "&:last-child td, &:last-child th": {
-            border: 0,
-        },
-    }));
-
-    const [products, setProducts] = useState([]); // Use an array to hold products
-
+    const [products, setProducts] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const [lastPage, setLastPage] = useState(1);
-    const [total, setTotal] = useState(0);
+    const [totalRows, setTotalRows] = useState(0);
     const [perPage, setPerPage] = useState(10); // Number of items per page
+    const [search, setSearch] = useState(""); // Search term
+    const [sortColumn, setSortColumn] = useState("id"); // Default sort column
+    const [sortDirection, setSortDirection] = useState("asc"); // Default sort direction
 
-    // Fetch products data on component mount
-    const fetchProducts = async (page = 1) => {
+    // Fetch products data
+    const fetchProducts = async (
+        page = 1,
+        perPage = 10,
+        search = "",
+        sortColumn = "id",
+        sortDirection = "asc"
+    ) => {
         try {
             const response = await axios.get(
                 `${import.meta.env.VITE_APP_BACKEND_URL}/products`,
                 {
                     params: {
-                        page: page,
+                        page,
                         per_page: perPage,
+                        search,
+                        sort_column: sortColumn,
+                        sort_direction: sortDirection,
                     },
                 }
             );
             setProducts(response.data.data);
             setCurrentPage(response.data.current_page);
-            setLastPage(response.data.last_page);
-            setTotal(response.data.total);
+            setTotalRows(response.data.total);
         } catch (error) {
             console.error("Error fetching products:", error);
         }
     };
 
     useEffect(() => {
-        fetchProducts(); // Call the fetchProducts function on mount or page change
-    }, [perPage]); // Effect runs when perPage changes
+        fetchProducts(currentPage, perPage, search, sortColumn, sortDirection);
+    }, [currentPage, perPage, search, sortColumn, sortDirection]);
 
-    useEffect(() => {
-        fetchProducts(currentPage); // Fetch products whenever the page number changes
-    }, [currentPage]);
-
-    // Handle page changes
+    // Custom handlers
     const handlePageChange = (page) => {
         setCurrentPage(page);
     };
 
-    // Handle per-page changes
-    const handlePerPageChange = (event) => {
-        setPerPage(event.target.value);
-        setCurrentPage(1); // Reset to the first page when per-page is changed
+    const handlePerRowsChange = (newPerPage) => {
+        setPerPage(newPerPage);
+        setCurrentPage(1); // Reset to the first page
     };
+
+    const handleSort = (column, direction) => {
+        setSortColumn(column.sortField || column.selector); // Use sortField if defined, otherwise selector
+        setSortDirection(direction);
+    };
+
+    const handleSearch = (e) => {
+        setSearch(e.target.value);
+        setCurrentPage(1); // Reset to the first page when searching
+    };
+
+    // Columns for DataTable
+    const columns = [
+        {
+            name: "ID",
+            selector: (row) => row.id,
+            sortable: true,
+            sortField: "id",
+            center: true,
+        },
+        {
+            name: "Product Name",
+            selector: (row) => row.name,
+            sortable: true,
+            sortField: "name",
+            center: true,
+        },
+        {
+            name: "Color",
+            selector: (row) => row.color,
+            sortable: true,
+            sortField: "color",
+            center: true,
+        },
+        {
+            name: "Amount",
+            selector: (row) => row.amount,
+            sortable: true,
+            sortField: "amount",
+            center: true,
+        },
+        {
+            name: "Unit",
+            selector: (row) => row.unit,
+            sortable: true,
+            sortField: "unit",
+            center: true,
+        },
+        {
+            name: "Total",
+            selector: (row) => row.amount * row.unit,
+            center: true,
+        },
+        {
+            name: "Created At",
+            selector: (row) =>
+                row.created_at
+                    ? new Date(row.created_at).toLocaleDateString("en-CA")
+                    : "N/A",
+            center: true,
+        },
+        {
+            name: "Updated At",
+            selector: (row) =>
+                row.updated_at
+                    ? new Date(row.updated_at).toLocaleDateString("en-CA")
+                    : "N/A",
+            center: true,
+        },
+        {
+            name: "Issue By",
+            selector: (row) =>
+                row.updated_by_name && row.updated_by
+                    ? `${row.updated_by_name} (ID = ${row.updated_by.id})`
+                    : "Unknown",
+            center: true,
+        },
+        {
+            name: "Manage",
+            cell: (row) => (
+                <Box
+                    sx={{
+                        display: "flex",
+                        gap: "10px",
+                        justifyContent: "center",
+                    }}
+                >
+                    <EditProduct id={row.id} fetchProducts={fetchProducts} />
+                    <DeleteProduct id={row.id} fetchProducts={fetchProducts} />
+                </Box>
+            ),
+            center: true,
+        },
+    ];
+
     return (
         <>
             <Navbar />
@@ -94,180 +162,45 @@ const LandingPage = () => {
                     sx={{
                         display: "flex",
                         margin: "20px",
-                        justifyContent: "flex-end",
+                        justifyContent: "space-between",
                         gap: "20px",
                     }}
                 >
-                    <CreateProduct />
-                    <ImportCSV fetchProducts={fetchProducts} />
+                    <TextField
+                        label="Search"
+                        variant="outlined"
+                        value={search}
+                        onChange={handleSearch}
+                        sx={{ width: "500px" }}
+                    />
+                    <Box
+                        sx={{
+                            display: "flex",
+                            margin: "20px",
+                            justifyContent: "space-between",
+                            gap: "20px",
+                        }}
+                    >
+                        <CreateProduct fetchProducts={fetchProducts} />
+                        <ImportCSV fetchProducts={fetchProducts} />
+                    </Box>
                 </Box>
 
-                <TableContainer component={Paper}>
-                    <Table aria-label="customized table">
-                        <TableHead>
-                            <TableRow>
-                                <StyledTableCell
-                                    align="center"
-                                    sx={{ width: "10%" }}
-                                >
-                                    ID
-                                </StyledTableCell>
-
-                                <StyledTableCell
-                                    align="center"
-                                    sx={{ width: "10%" }}
-                                >
-                                    Product name
-                                </StyledTableCell>
-
-                                <StyledTableCell
-                                    align="center"
-                                    sx={{ width: "10%" }}
-                                >
-                                    Color
-                                </StyledTableCell>
-
-                                <StyledTableCell
-                                    align="center"
-                                    sx={{ width: "10%" }}
-                                >
-                                    Amount
-                                </StyledTableCell>
-                                <StyledTableCell
-                                    align="center"
-                                    sx={{ width: "10%" }}
-                                >
-                                    Unit
-                                </StyledTableCell>
-                                <StyledTableCell
-                                    align="center"
-                                    sx={{ width: "10%" }}
-                                >
-                                    Total
-                                </StyledTableCell>
-                                <StyledTableCell
-                                    align="center"
-                                    sx={{ width: "10%" }}
-                                >
-                                    Created at
-                                </StyledTableCell>
-                                <StyledTableCell
-                                    align="center"
-                                    sx={{ width: "10%" }}
-                                >
-                                    Updated at
-                                </StyledTableCell>
-                                <StyledTableCell
-                                    align="center"
-                                    sx={{ width: "20%" }}
-                                >
-                                    Issue By
-                                </StyledTableCell>
-                                <StyledTableCell
-                                    align="center"
-                                    sx={{ width: "10%" }}
-                                >
-                                    Manage
-                                </StyledTableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {products.length === 0 ? (
-                                <StyledTableRow>
-                                    <StyledTableCell align="center" colSpan={7}>
-                                        No data available
-                                    </StyledTableCell>
-                                </StyledTableRow>
-                            ) : (
-                                products.map((row) => (
-                                    <StyledTableRow key={row.id}>
-                                        <StyledTableCell align="center">
-                                            {row.id}
-                                        </StyledTableCell>
-                                        <StyledTableCell align="center">
-                                            {row.name}
-                                        </StyledTableCell>
-                                        <StyledTableCell align="center">
-                                            {row.color}
-                                        </StyledTableCell>
-                                        <StyledTableCell align="center">
-                                            {row.amount}
-                                        </StyledTableCell>
-                                        <StyledTableCell align="center">
-                                            {row.unit}
-                                        </StyledTableCell>
-                                        <StyledTableCell align="center">
-                                            {row.amount * row.unit}
-                                        </StyledTableCell>
-                                        <StyledTableCell align="center">
-                                            {row.created_at
-                                                ? new Date(
-                                                      row.created_at
-                                                  ).toLocaleDateString("en-CA")
-                                                : "N/A"}
-                                        </StyledTableCell>
-                                        <StyledTableCell align="center">
-                                            {row.updated_at
-                                                ? new Date(
-                                                      row.updated_at
-                                                  ).toLocaleDateString("en-CA")
-                                                : "N/A"}
-                                        </StyledTableCell>
-
-                                        <TableCell align="center">
-                                            {row.updated_by_name &&
-                                            row.updated_by
-                                                ? `${row.updated_by_name} (ID = ${row.updated_by.id})`
-                                                : "Unknown"}
-                                        </TableCell>
-
-                                        <StyledTableCell
-                                            align="center"
-                                            sx={{
-                                                display: "flex",
-                                                gap: "10px",
-                                                justifyContent: "center",
-                                            }}
-                                        >
-                                            <EditProduct
-                                                id={row.id}
-                                                fetchProducts={fetchProducts}
-                                            />
-
-                                            <DeleteProduct
-                                                id={row.id}
-                                                fetchProducts={fetchProducts}
-                                            />
-                                        </StyledTableCell>
-                                    </StyledTableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-
-                {/* Pagination controls */}
-                <Box
-                    sx={{
-                        display: "flex",
-                        justifyContent: "center",
-                        marginTop: "20px",
-                    }}
-                >
-                    <Button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                    >
-                        Previous
-                    </Button>
-                    <span>{`Page ${currentPage} of ${lastPage}`}</span>
-                    <Button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === lastPage}
-                    >
-                        Next
-                    </Button>
-                </Box>
+                <DataTable
+                    stripedRows
+                    title="Products"
+                    columns={columns}
+                    data={products}
+                    pagination
+                    paginationServer
+                    paginationTotalRows={totalRows}
+                    paginationDefaultPage={currentPage}
+                    paginationRowsPerPageOptions={[10, 25, 50, 100]} // Allow custom items per page
+                    onChangeRowsPerPage={handlePerRowsChange}
+                    onChangePage={handlePageChange}
+                    onSort={handleSort}
+                    highlightOnHover
+                />
             </div>
         </>
     );

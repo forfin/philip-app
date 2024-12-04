@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Schema;
+
 
 class ProductController extends Controller
 {
@@ -13,17 +15,42 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        // Default items per page
-        $perPage = $request->get('per_page', 10);  // You can adjust the default number of items per page
-    
-        $products = Product::with('updatedBy')->paginate($perPage); // Paginate the results
-    
-        // Map over the products and add the updated_by_name
+        // Get search and sort parameters from the request
+        $search = $request->get('search', ''); // Search term
+        $sortColumn = $request->get('sort_column', 'id'); // Default sort column
+        $sortDirection = $request->get('sort_direction', 'asc'); // Default sort direction (asc/desc)
+        $perPage = $request->get('per_page', 10); // Items per page
+
+        // Validate sort direction
+        $sortDirection = in_array($sortDirection, ['asc', 'desc']) ? $sortDirection : 'asc';
+
+        // Query products
+        $query = Product::with('updatedBy');
+
+        // Apply search filter
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('color', 'like', "%{$search}%")
+                    ->orWhere('amount', 'like', "%{$search}%");
+            });
+        }
+
+        // Apply sorting
+        if (Schema::hasColumn('products', $sortColumn)) { // Ensure column exists to prevent SQL errors
+            $query->orderBy($sortColumn, $sortDirection);
+        }
+
+        // Paginate results
+        $products = $query->paginate($perPage);
+
+        // Add updated_by_name to each product
         $products->getCollection()->transform(function ($product) {
             $product->updated_by_name = $product->updatedBy ? $product->updatedBy->name : 'Unknown';
             return $product;
         });
-    
+
+        // Return response
         return response()->json([
             'success' => true,
             'data' => $products->items(),
@@ -33,7 +60,8 @@ class ProductController extends Controller
             'per_page' => $products->perPage(),
         ], 200);
     }
-    
+
+
 
     public function show($id)
     {
