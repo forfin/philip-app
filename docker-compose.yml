@@ -15,8 +15,8 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./src:/var/www/html:delegated
-      - ./logs:/var/log/nginx
+      - ./:/var/www/html:delegated
+      - ./var/log/nginx:/var/log/nginx
     depends_on:
       - php
     networks:
@@ -29,7 +29,7 @@ services:
     container_name: php
     restart: always
     volumes:
-      - ./src:/var/www/html
+      - ./:/var/www/html
     networks:
       - laravel
 
