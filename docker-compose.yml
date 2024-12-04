@@ -15,7 +15,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./:/var/www/html:delegated
+      - ./public:/var/www/html/public:delegated
       - ./var/log/nginx:/var/log/nginx
     depends_on:
       - php
